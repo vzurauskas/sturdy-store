@@ -1,0 +1,7 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+sturdy-store,com.vzurauskas.sturdystore,Store.FakeStore,4,59,0,2,1,12,1,6,1,5
+sturdy-store,com.vzurauskas.sturdystore,JooqStore.JooqEntry,0,5,0,0,0,2,0,1,0,1
+sturdy-store,com.vzurauskas.sturdystore,Cached,0,17,0,2,0,6,0,3,0,2
+sturdy-store,com.vzurauskas.sturdystore,JooqStore,0,217,0,2,0,50,0,14,0,13
+sturdy-store,com.vzurauskas.sturdystore,Store.Condition,0,15,0,0,0,6,0,3,0,3
+sturdy-store,com.vzurauskas.sturdystore,Store.Entry,4,16,0,0,1,4,1,2,1,2

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JooqStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sturdy-store</a> &gt; <a href="index.source.html" class="el_package">com.vzurauskas.sturdystore</a> &gt; <span class="el_source">JooqStore.java</span></div><h1>JooqStore.java</h1><pre class="source lang-java linenums">package com.vzurauskas.sturdystore;
+
+import com.vzurauskas.nereides.jackson.Json;
+import com.vzurauskas.nereides.jackson.MutableJson;
+import com.vzurauskas.nereides.jackson.SmartJson;
+import org.jooq.*;
+import org.jooq.impl.DSL;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public final class JooqStore implements Store&lt;Store.Entry&gt; {
+
+    private final String table;
+    private final Cached&lt;DSLContext&gt; db;
+    private final Map&lt;String, Map.Entry&lt;String, DataType&lt;?&gt;&gt;&gt; fieldToColumn;
+
+    public JooqStore(
+        String table,
+        DSLContext db,
+        Map&lt;String, Map.Entry&lt;String, DataType&lt;?&gt;&gt;&gt; fieldToColumn,
+        List&lt;ConstraintEnforcementStep&gt; constraints,
+        List&lt;CreateIndexIncludeStep&gt; indexes
+<span class="fc" id="L24">    ) {</span>
+<span class="fc" id="L25">        this.table = table;</span>
+<span class="fc" id="L26">        this.db = new Cached&lt;&gt;(() -&gt; {</span>
+<span class="fc" id="L27">            init(db, constraints, indexes);</span>
+<span class="fc" id="L28">            return db;</span>
+        });
+<span class="fc" id="L30">        this.fieldToColumn = new HashMap&lt;&gt;(fieldToColumn);</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public void save(Entry entry) {
+<span class="fc" id="L35">        SmartJson se = new SmartJson(entry);</span>
+<span class="fc" id="L36">        db.value().insertInto(DSL.table(table))</span>
+<span class="fc" id="L37">            .columns(</span>
+<span class="fc" id="L38">                fieldToColumn.values().stream().map(</span>
+<span class="fc" id="L39">                    col -&gt; DSL.field(col.getKey())</span>
+<span class="fc" id="L40">                ).collect(Collectors.toList())</span>
+            )
+<span class="fc" id="L42">            .values(</span>
+<span class="fc" id="L43">                fieldToColumn.keySet().stream()</span>
+<span class="fc" id="L44">                    .map(se::leaf)</span>
+<span class="fc" id="L45">                    .collect(Collectors.toList())</span>
+            )
+<span class="fc" id="L47">            .execute();</span>
+<span class="fc" id="L48">    }</span>
+
+    @Override
+    public Set&lt;Entry&gt; find(Condition... conditions) {
+<span class="fc" id="L52">        return db.value()</span>
+<span class="fc" id="L53">            .select()</span>
+<span class="fc" id="L54">            .from(table)</span>
+<span class="fc" id="L55">            .where(aggFieldEquals(conditions))</span>
+<span class="fc" id="L56">            .fetch().stream()</span>
+<span class="fc" id="L57">            .map(</span>
+                record -&gt; {
+<span class="fc" id="L59">                    MutableJson json = new MutableJson();</span>
+<span class="fc" id="L60">                    Arrays.stream(record.fields()).forEach(</span>
+<span class="fc" id="L61">                        field -&gt; json.with(</span>
+<span class="fc" id="L62">                            field.getName().toLowerCase(),</span>
+<span class="fc" id="L63">                            field.getValue(record).toString())</span>
+                    );
+<span class="fc" id="L65">                    return new JooqEntry(record.get(&quot;ID&quot;).toString(), json);</span>
+                }
+<span class="fc" id="L67">            ).collect(Collectors.toSet());</span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L72">        return db.value().selectCount().from(table).fetchOne(0, int.class);</span>
+    }
+
+    private void init(
+        DSLContext database,
+        List&lt;ConstraintEnforcementStep&gt; constraints,
+        List&lt;CreateIndexIncludeStep&gt; indexes
+    ) {
+<span class="fc" id="L80">        CreateTableColumnStep step = database.createTableIfNotExists(table);</span>
+<span class="fc" id="L81">        fieldToColumn.values().forEach(</span>
+<span class="fc" id="L82">            column -&gt; step.column(column.getKey(), column.getValue())</span>
+        );
+<span class="fc" id="L84">        step.constraints(constraints).execute();</span>
+<span class="fc" id="L85">        indexes.forEach(Query::execute);</span>
+<span class="fc" id="L86">    }</span>
+
+    private org.jooq.Condition aggFieldEquals(Condition... conditions) {
+<span class="fc" id="L89">        return aggFieldEquals(</span>
+<span class="fc" id="L90">            fieldEquals(conditions[0]),</span>
+<span class="fc" id="L91">            Arrays.copyOfRange(conditions, 1, conditions.length)</span>
+        );
+    }
+
+    private org.jooq.Condition aggFieldEquals(
+        org.jooq.Condition agg, Condition... tail
+    ) {
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        return tail.length == 0</span>
+<span class="fc" id="L99">            ? agg</span>
+<span class="fc" id="L100">            : aggFieldEquals(</span>
+<span class="fc" id="L101">                agg.and(fieldEquals(tail[0])),</span>
+<span class="fc" id="L102">                Arrays.copyOfRange(tail, 1, tail.length)</span>
+            );
+    }
+
+    private org.jooq.Condition fieldEquals(Condition condition) {
+<span class="fc" id="L107">        return DSL.field(</span>
+<span class="fc" id="L108">            table + '.' + condition.field().toUpperCase()</span>
+<span class="fc" id="L109">        ).eq(condition.value());</span>
+    }
+
+    private static class JooqEntry extends Entry {
+        protected JooqEntry(String id, Json origin) {
+<span class="fc" id="L114">            super(id, origin);</span>
+<span class="fc" id="L115">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
