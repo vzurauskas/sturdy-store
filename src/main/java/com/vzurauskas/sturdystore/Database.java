@@ -1,20 +1,24 @@
 package com.vzurauskas.sturdystore;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import com.zaxxer.hikari.HikariDataSource;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 public final class Database implements AutoCloseable {
-    private final BoneCPDataSource source;
+    private final HikariDataSource source;
     private final String file;
+    private final String username;
+    private final String password;
     private Connection connection;
 
-    public Database(String source) {
-        this.file = source;
+    public Database(String h2File, String username, String password) {
+        this.file = h2File;
+        this.username = username;
+        this.password = password;
         this.source = dataSource();
     }
 
@@ -27,13 +31,12 @@ public final class Database implements AutoCloseable {
         return DSL.using(connection, SQLDialect.H2);
     }
 
-    private BoneCPDataSource dataSource() {
-        final BoneCPDataSource src = new BoneCPDataSource();
-        src.setDriverClass("org.h2.Driver");
-        src.setJdbcUrl("jdbc:h2:" + file);
-        src.setUser("");
-        src.setPassword("");
-        return src;
+    private HikariDataSource dataSource() {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl("jdbc:h2:" + file);
+        ds.setUsername(username);
+        ds.setPassword(password);
+        return ds;
     }
 
     @Override

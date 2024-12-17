@@ -2,7 +2,7 @@ package com.vzurauskas.sturdystore;
 
 import java.util.function.Supplier;
 
-public final class Cached<T> {
+final class Cached<T> {
     private final Supplier<T> func;
     private T value;
 

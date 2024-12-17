@@ -15,7 +15,7 @@ import java.util.*;
 import static org.jooq.impl.SQLDataType.DECIMAL;
 import static org.jooq.impl.SQLDataType.VARCHAR;
 
-public final class CashTransactionStore implements Store<CashTransactionStore.CashEntry> {
+final class CashTransactionStore implements Store<CashTransactionStore.CashEntry> {
 
     public static final class CashEntry extends Store.Entry {
         CashEntry(Transaction transaction) {

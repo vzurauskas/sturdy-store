@@ -6,7 +6,7 @@
 
     <groupId>com.vzurauskas</groupId>
     <artifactId>sturdy-store</artifactId>
-    <version>0.1.0</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <java.version>21</java.version>
@@ -33,6 +33,30 @@
                     <target>21</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <argLine>${surefire.jacoco.args}</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <argLine>${failsafe.jacoco.args}</argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
         </plugins>
     </build>
@@ -42,6 +66,11 @@
             <groupId>com.vzurauskas.nereides</groupId>
             <artifactId>nereides-jackson</artifactId>
             <version>1.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>6.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
@@ -214,30 +243,6 @@
                                     </rules>
                                     <dataFile>${project.build.directory}/jacoco-output/merged.exec</dataFile>
                                 </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <configuration>
-                            <argLine>${surefire.jacoco.args}</argLine>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <configuration>
-                            <argLine>${failsafe.jacoco.args}</argLine>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
                             </execution>
                         </executions>
                     </plugin>

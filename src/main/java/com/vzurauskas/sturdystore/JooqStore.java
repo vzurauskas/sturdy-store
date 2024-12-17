@@ -10,7 +10,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public final class JooqStore implements Store<Store.Entry> {
-
     private final String table;
     private final Cached<DSLContext> db;
     private final Map<String, Map.Entry<String, DataType<?>>> fieldToColumn;

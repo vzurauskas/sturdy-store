@@ -13,7 +13,7 @@ class JooqStoreIT {
     private final Database database;
 
     JooqStoreIT() {
-        this.database = new Database("mem:");
+        this.database = new Database("mem:", "", "");
     }
 
     @AfterEach
