@@ -1,17 +1,14 @@
 package com.vzurauskas.sturdystore;
 
-import com.vzurauskas.nereides.jackson.Json;
-import com.vzurauskas.nereides.jackson.MutableJson;
-import com.vzurauskas.nereides.jackson.SmartJson;
-
-import org.jooq.DSLContext;
-import org.jooq.DataType;
-import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
-
 import java.io.InputStream;
 import java.util.*;
 
+import com.vzurauskas.nereides.jackson.Json;
+import com.vzurauskas.nereides.jackson.MutableJson;
+import com.vzurauskas.nereides.jackson.SmartJson;
+import org.jooq.DataType;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import static org.jooq.impl.SQLDataType.DECIMAL;
 import static org.jooq.impl.SQLDataType.VARCHAR;
 
@@ -56,7 +53,7 @@ final class CashTransactionStore implements Store<CashTransactionStore.CashEntry
 
     private final Store<Entry> origin;
 
-    public CashTransactionStore(DSLContext db) {
+    public CashTransactionStore(Database db) {
         this(new JooqStore(
             "CASH_TRANSACTION",
             db,
@@ -72,9 +69,9 @@ final class CashTransactionStore implements Store<CashTransactionStore.CashEntry
                 DSL.constraint("IP_CASH_TRANSACTION").unique("DATE", "CATEGORY")
             ),
             List.of(
-                db
-                    .createIndexIfNotExists("IDX_CT_DC_CATEGORY")
-                    .on("CASH_TRANSACTION", "DC", "CATEGORY")
+                new JooqIndex(
+                    "IDX_CT_DC_CATEGORY", "CASH_TRANSACTION", "DC", "CATEGORY"
+                )
             )
         ));
     }
@@ -95,7 +92,7 @@ final class CashTransactionStore implements Store<CashTransactionStore.CashEntry
     }
 
     @Override
-    public Set<Entry> find(Condition... conditions) {
+    public Collection<Entry> find(Condition... conditions) {
         return origin.find(conditions);
     }
 

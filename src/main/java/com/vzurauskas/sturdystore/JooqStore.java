@@ -1,25 +1,28 @@
 package com.vzurauskas.sturdystore;
 
-import com.vzurauskas.nereides.jackson.Json;
-import com.vzurauskas.nereides.jackson.MutableJson;
-import com.vzurauskas.nereides.jackson.SmartJson;
-import org.jooq.*;
-import org.jooq.impl.DSL;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.vzurauskas.nereides.jackson.Json;
+import com.vzurauskas.nereides.jackson.MutableJson;
+import com.vzurauskas.nereides.jackson.SmartJson;
+import org.jooq.ConstraintEnforcementStep;
+import org.jooq.CreateTableColumnStep;
+import org.jooq.DataType;
+import org.jooq.Record;
+import org.jooq.impl.DSL;
+
 public final class JooqStore implements Store<Store.Entry> {
     private final String table;
-    private final Cached<DSLContext> db;
+    private final Cached<Database> db;
     private final Map<String, Map.Entry<String, DataType<?>>> fieldToColumn;
 
     public JooqStore(
         String table,
-        DSLContext db,
+        Database db,
         Map<String, Map.Entry<String, DataType<?>>> fieldToColumn,
-        List<ConstraintEnforcementStep> constraints,
-        List<CreateIndexIncludeStep> indexes
+        Collection<ConstraintEnforcementStep> constraints,
+        Collection<JooqIndex> indexes
     ) {
         this.table = table;
         this.db = new Cached<>(() -> {
@@ -30,9 +33,11 @@ public final class JooqStore implements Store<Store.Entry> {
     }
 
     @Override
+    @SuppressWarnings("resource")
     public void save(Entry entry) {
         SmartJson se = new SmartJson(entry);
-        db.value().insertInto(DSL.table(table))
+        db.value().execVoid(dsl -> dsl
+            .insertInto(DSL.table(table))
             .columns(
                 fieldToColumn.values().stream().map(
                     col -> DSL.field(col.getKey())
@@ -43,45 +48,52 @@ public final class JooqStore implements Store<Store.Entry> {
                     .map(se::leaf)
                     .collect(Collectors.toList())
             )
-            .execute();
+            .execute()
+        );
     }
 
     @Override
-    public Set<Entry> find(Condition... conditions) {
-        return db.value()
+    public List<Entry> find(Condition... conditions) {
+        return db.value().execFetchList(dsl -> dsl
             .select()
             .from(table)
             .where(aggFieldEquals(conditions))
             .fetch().stream()
-            .map(
-                record -> {
-                    MutableJson json = new MutableJson();
-                    Arrays.stream(record.fields()).forEach(
-                        field -> json.with(
-                            field.getName().toLowerCase(),
-                            field.getValue(record).toString())
-                    );
-                    return new JooqEntry(record.get("ID").toString(), json);
-                }
-            ).collect(Collectors.toSet());
+            .map(JooqStore::entry)
+            .collect(Collectors.toList())
+        );
+    }
+
+    private static JooqEntry entry(Record record) {
+        MutableJson json = new MutableJson();
+        Arrays.stream(record.fields()).forEach(
+            field -> json.with(
+                field.getName().toLowerCase(),
+                field.getValue(record).toString())
+        );
+        return new JooqEntry(record.get("ID").toString(), json);
     }
 
     @Override
     public int size() {
-        return db.value().selectCount().from(table).fetchOne(0, int.class);
+        return db.value().execFetchList(
+            dsl -> List.of(dsl.selectCount().from(table).fetchOne(0, int.class))
+        ).stream().findFirst().orElseThrow();
     }
 
     private void init(
-        DSLContext database,
-        List<ConstraintEnforcementStep> constraints,
-        List<CreateIndexIncludeStep> indexes
+        Database database,
+        Collection<ConstraintEnforcementStep> constraints,
+        Collection<JooqIndex> indexes
     ) {
-        CreateTableColumnStep step = database.createTableIfNotExists(table);
-        fieldToColumn.values().forEach(
-            column -> step.column(column.getKey(), column.getValue())
-        );
-        step.constraints(constraints).execute();
-        indexes.forEach(Query::execute);
+        database.execVoid(dsl -> {
+            CreateTableColumnStep step = dsl.createTableIfNotExists(table);
+            fieldToColumn.values().forEach(
+                column -> step.column(column.getKey(), column.getValue())
+            );
+            step.constraints(constraints).execute();
+            indexes.forEach(index -> index.create(dsl));
+        });
     }
 
     private org.jooq.Condition aggFieldEquals(Condition... conditions) {

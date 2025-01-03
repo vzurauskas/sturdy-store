@@ -5,6 +5,7 @@ import com.vzurauskas.nereides.jackson.MutableJson;
 import com.vzurauskas.nereides.jackson.SmartJson;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,7 +13,7 @@ import java.util.stream.Stream;
 
 public interface Store<T extends Store.Entry> {
     void save(T entry);
-    Set<Entry> find(Condition... conditions);
+    Collection<Entry> find(Condition... conditions);
     int size();
 
     abstract class Entry implements Json {
