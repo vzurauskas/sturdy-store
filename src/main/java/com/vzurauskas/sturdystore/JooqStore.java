@@ -6,10 +6,8 @@ import java.util.stream.Collectors;
 import com.vzurauskas.nereides.jackson.Json;
 import com.vzurauskas.nereides.jackson.MutableJson;
 import com.vzurauskas.nereides.jackson.SmartJson;
-import org.jooq.ConstraintEnforcementStep;
-import org.jooq.CreateTableColumnStep;
-import org.jooq.DataType;
 import org.jooq.Record;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 
 public final class JooqStore implements Store<Store.Entry> {
@@ -62,6 +60,23 @@ public final class JooqStore implements Store<Store.Entry> {
             .map(JooqStore::entry)
             .collect(Collectors.toList())
         );
+    }
+
+    @Override
+    public Map<? super String, Entry> findMap(String keyField, Condition... conditions) {
+        return db.value().execFetchMap(
+            (Database.MapTransaction<DSLContext, ? super String, Entry>)
+                (Database.MapTransaction<DSLContext, String, Entry>)
+                    dsl -> dsl
+                        .select()
+                        .from(table)
+                        .where(aggFieldEquals(conditions))
+                        .fetchMap(fieldToColumn.get(keyField).getKey())
+                        .entrySet().stream()
+                        .collect(Collectors.toMap(
+                            (Map.Entry<?, Record> e) -> e.getKey().toString(),
+                            (Map.Entry<?, Record> e) -> entry(e.getValue())
+                        )));
     }
 
     private static JooqEntry entry(Record record) {

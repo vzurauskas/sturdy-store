@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import com.vzurauskas.nereides.jackson.SmartJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class JooqStoreTest {
@@ -36,6 +37,18 @@ class JooqStoreTest {
         );
         assertEquals(1, entries.size());
         assertEquals("9.99", singletonField(entries, "amount"));
+    }
+
+    @Test
+    void findsAndGroups() {
+        CashTransactionStore store = storeWithFiveEntries();
+        var map = store.findMap(
+            "date",
+            new Store.Condition("category", "Books")
+        );
+        assertEquals(2, map.size());
+        assertTrue(map.containsKey("2024-10-16"));
+        assertTrue(map.containsKey("2024-10-18"));
     }
 
     private static String singletonField(

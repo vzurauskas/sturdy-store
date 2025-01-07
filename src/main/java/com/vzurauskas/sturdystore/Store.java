@@ -1,19 +1,18 @@
 package com.vzurauskas.sturdystore;
 
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.vzurauskas.nereides.jackson.Json;
 import com.vzurauskas.nereides.jackson.MutableJson;
 import com.vzurauskas.nereides.jackson.SmartJson;
 
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public interface Store<T extends Store.Entry> {
     void save(T entry);
     Collection<Entry> find(Condition... conditions);
+    Map<? super String, Entry> findMap(String keyField, Condition... conditions);
     int size();
 
     abstract class Entry implements Json {
@@ -43,6 +42,10 @@ public interface Store<T extends Store.Entry> {
             this.value = value;
         }
 
+        public boolean matches(Entry entry) {
+            return value.equals(new SmartJson(entry).leaf(field));
+        }
+
         public String field() {
             return field;
         }
@@ -66,15 +69,27 @@ public interface Store<T extends Store.Entry> {
 
         @Override
         public Set<Entry> find(Condition... conditions) {
-            Stream<Entry> stream = entries.stream();
-            for (Condition condition : conditions) {
-                stream = stream.filter(
-                    e -> condition.value().equals(
-                        new SmartJson(e).leaf(condition.field())
-                    )
-                );
-            }
-            return stream.collect(Collectors.toSet());
+            return resultStream(conditions).collect(Collectors.toSet());
+        }
+
+        @Override
+        public Map<? super String, Entry> findMap(
+            String keyField, Condition... conditions
+        ) {
+            return resultStream(conditions).collect(
+                Collectors.toMap(
+                    entry -> new SmartJson(entry).leaf(keyField),
+                    entry -> entry
+                )
+            );
+        }
+
+        private Stream<Entry> resultStream(Condition[] conditions) {
+            return entries.stream().filter(entry ->
+                Arrays.stream(conditions).allMatch(
+                    condition -> condition.matches(entry)
+                )
+            );
         }
 
         @Override

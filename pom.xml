@@ -21,6 +21,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.3.1</version>
                 <configuration>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <argLine>${surefire.jacoco.args}</argLine>
                     <useSystemClassLoader>true</useSystemClassLoader>
                 </configuration>
             </plugin>
@@ -38,6 +40,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.3.1</version>
                 <configuration>
+                    <!--suppress UnresolvedMavenProperty -->
                     <argLine>${failsafe.jacoco.args}</argLine>
                 </configuration>
                 <executions>

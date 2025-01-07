@@ -1,7 +1,5 @@
 package com.vzurauskas.sturdystore;
 
-import java.util.Set;
-
 import org.jooq.DSLContext;
 
 public final class JooqIndex {

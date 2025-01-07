@@ -97,6 +97,11 @@ final class CashTransactionStore implements Store<CashTransactionStore.CashEntry
     }
 
     @Override
+    public Map<? super String, Entry> findMap(String keyField, Condition... conditions) {
+        return origin.findMap(keyField, conditions);
+    }
+
+    @Override
     public int size() {
         return origin.size();
     }
