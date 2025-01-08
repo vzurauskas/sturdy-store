@@ -1,5 +1,6 @@
 package com.vzurauskas.sturdystore;
 
+import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -10,7 +11,7 @@ import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
-public final class Database {
+public final class Database implements Closeable {
     private final HikariDataSource source;
 
     public Database(String h2File, String username, String password) {
@@ -52,6 +53,11 @@ public final class Database {
         ds.setUsername(username);
         ds.setPassword(password);
         return ds;
+    }
+
+    @Override
+    public void close() {
+        source.close();
     }
 
     @FunctionalInterface

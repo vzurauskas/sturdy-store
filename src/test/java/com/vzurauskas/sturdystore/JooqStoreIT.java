@@ -3,6 +3,7 @@ package com.vzurauskas.sturdystore;
 import java.util.Collection;
 
 import com.vzurauskas.nereides.jackson.SmartJson;
+import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,11 @@ class JooqStoreIT {
 
     JooqStoreIT() {
         this.database = new Database("mem:", "", "");
+    }
+
+    @AfterEach
+    void cleanup() {
+        database.close();
     }
 
     @Test
